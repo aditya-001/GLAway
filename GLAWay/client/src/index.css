@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --brand: #f97316;
+  --brand-dark: #c2410c;
+  --surface: #fffaf5;
+  --surface-alt: #fff0e3;
+  --surface-elevated: rgba(255, 255, 255, 0.82);
+  --text-main: #18181b;
+  --text-soft: #5b6475;
+  --ring: rgba(249, 115, 22, 0.18);
+  --shadow-card: 0 20px 55px rgba(15, 23, 42, 0.08);
+}
+
+html.dark {
+  color-scheme: dark;
+  --surface: #0f172a;
+  --surface-alt: #111827;
+  --surface-elevated: rgba(15, 23, 42, 0.78);
+  --text-main: #f8fafc;
+  --text-soft: #94a3b8;
+  --ring: rgba(251, 146, 60, 0.18);
+  --shadow-card: 0 24px 80px rgba(2, 6, 23, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.22), transparent 30%),
+    radial-gradient(circle at top right, rgba(248, 113, 113, 0.14), transparent 26%),
+    linear-gradient(180deg, #fff9f3 0%, #fff4eb 32%, #ffffff 100%);
+  color: var(--text-main);
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui;
+  transition:
+    background 220ms ease,
+    color 220ms ease;
+}
+
+html.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 24%),
+    linear-gradient(180deg, #020617 0%, #0f172a 45%, #111827 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.22);
+}
+
+.surface-card {
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+}
+
+.surface-panel {
+  background: color-mix(in srgb, var(--surface) 82%, white 18%);
+}
+
+.text-soft {
+  color: var(--text-soft);
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.frosted-border {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glass-panel {
+  background: var(--surface-elevated);
+  backdrop-filter: blur(18px);
+}
+
+.floating-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(20px);
+  opacity: 0.42;
+}

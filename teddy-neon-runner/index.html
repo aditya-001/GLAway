@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Teddy Neon Runner is a cute cyberpunk endless runner built with Phaser.js."
+    />
+    <meta name="theme-color" content="#0f0f1a" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230f0f1a'/%3E%3Cpath d='M20 25a8 8 0 1 1 8-8 8 8 0 0 1-8 8Zm24 0a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z' fill='%2376ebff'/%3E%3Ccircle cx='32' cy='35' r='16' fill='%239a6a4f' stroke='%2376ebff' stroke-width='3'/%3E%3Ccircle cx='26' cy='31' r='2.8' fill='%23182335'/%3E%3Ccircle cx='38' cy='31' r='2.8' fill='%23182335'/%3E%3Ccircle cx='32' cy='36' r='4.5' fill='%23f5d7c0'/%3E%3Cpath d='M27 40c2.2 2.6 7.8 2.6 10 0' stroke='%2393f7ff' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <title>Teddy Neon Runner</title>
+    <link rel="stylesheet" href="./style.css" />
+
+    <!-- Optional platform SDKs for portal builds -->
+    <!-- <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script> -->
+    <!-- <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script> -->
+  </head>
+  <body>
+    <div class="page-glow page-glow-left"></div>
+    <div class="page-glow page-glow-right"></div>
+    <div id="runtime-warning" class="runtime-warning" hidden></div>
+
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Hyper-Casual Endless Runner</p>
+        <h1>Teddy Neon Runner</h1>
+        <p class="subtitle">
+          Swipe lanes, dodge barriers, and press <span>Space</span> to launch the neon teddy.
+        </p>
+      </header>
+
+      <section class="game-card">
+        <div class="bear-ears" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </div>
+        <div class="card-badge">Baby Bear Arcade</div>
+        <div class="game-frame">
+          <div id="game-container" aria-label="Game canvas"></div>
+        </div>
+        <p class="game-hint">Swipe to scoot lanes. Up hops. Down slides. Tiny paws, big reflexes.</p>
+        <div class="game-chips" aria-hidden="true">
+          <span>Plush UI</span>
+          <span>Mobile Friendly</span>
+          <span>Poki Ready</span>
+          <span>CrazyGames Ready</span>
+        </div>
+      </section>
+    </main>
+
+    <noscript>This game needs JavaScript enabled to run.</noscript>
+
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+    <script>
+      const warning = document.getElementById("runtime-warning");
+      if (window.location.protocol === "file:") {
+        warning.hidden = false;
+        warning.textContent =
+          "Open this game through a local server, not file://. Run: python3 -m http.server 8123";
+      }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
