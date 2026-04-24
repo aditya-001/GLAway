@@ -7,10 +7,23 @@ import CartItem from "../components/CartItem";
 import { useAuth } from "../context/AuthContext";
 import { orderService } from "../services/orderService";
 import { paymentService } from "../services/paymentService";
+import { resolveAssetUrl } from "../services/api";
 
 const DEFAULT_PREP_MINUTES = 15;
 const PICKUP_SLOT_INTERVAL = 10;
 const PICKUP_SLOT_COUNT = 4;
+const PAYMENT_METHODS = [
+  {
+    value: "PhonePe",
+    title: "PhonePe QR",
+    helper: "Scan the QR and confirm after paying"
+  },
+  {
+    value: "Razorpay",
+    title: "Razorpay",
+    helper: "Pay online with card, UPI, or netbanking"
+  }
+];
 
 const extractPrepMinutes = (prepTime = "") => {
   const values = String(prepTime)
@@ -78,6 +91,10 @@ const CartPage = ({ cartItems, onUpdateQuantity, onClearCart, setLatestOrder }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedPickupTime, setSelectedPickupTime] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("PhonePe");
+  const [paymentQr, setPaymentQr] = useState(null);
+  const [paymentQrLoading, setPaymentQrLoading] = useState(false);
+  const [paymentQrError, setPaymentQrError] = useState("");
 
   const totals = useMemo(() => {
     const subtotal = cartItems.reduce(
@@ -112,6 +129,67 @@ const CartPage = ({ cartItems, onUpdateQuantity, onClearCart, setLatestOrder }) 
     }
   }, [pickupTimeOptions, selectedPickupTime]);
 
+  useEffect(() => {
+    if (!user || paymentMethod !== "PhonePe") {
+      setPaymentQr(null);
+      setPaymentQrError("");
+      setPaymentQrLoading(false);
+      return;
+    }
+
+    let active = true;
+
+    const loadPaymentQr = async () => {
+      try {
+        setPaymentQrLoading(true);
+        setPaymentQrError("");
+        const data = await paymentService.getQr();
+
+        if (active) {
+          setPaymentQr(data);
+        }
+      } catch (qrError) {
+        if (active) {
+          setPaymentQrError(
+            qrError.response?.data?.message ||
+              qrError.message ||
+              "Unable to load the payment QR"
+          );
+        }
+      } finally {
+        if (active) {
+          setPaymentQrLoading(false);
+        }
+      }
+    };
+
+    loadPaymentQr();
+
+    return () => {
+      active = false;
+    };
+  }, [paymentMethod, user]);
+
+  const finalizeOrder = async (paymentMeta = {}) => {
+    const { paymentMethod: metaPaymentMethod, paymentStatus, ...restPaymentMeta } =
+      paymentMeta;
+
+    const order = await orderService.placeOrder({
+      items: cartItems.map((item) => ({
+        foodItem: item._id,
+        quantity: item.quantity
+      })),
+      requestedPickupAt: selectedPickupOption.value,
+      paymentMethod: metaPaymentMethod || paymentMethod,
+      paymentStatus: paymentStatus || "Paid",
+      ...restPaymentMeta
+    });
+
+    setLatestOrder(order);
+    onClearCart();
+    navigate(`/order-success/${order._id}`);
+  };
+
   const handleCheckout = async () => {
     if (!user) {
       navigate("/login");
@@ -129,27 +207,19 @@ const CartPage = ({ cartItems, onUpdateQuantity, onClearCart, setLatestOrder }) 
       setLoading(true);
       setError("");
 
-      const finalizeOrder = async (paymentMeta) => {
-        const order = await orderService.placeOrder({
-          items: cartItems.map((item) => ({
-            foodItem: item._id,
-            quantity: item.quantity
-          })),
-          requestedPickupAt: selectedPickupOption.value,
-          paymentMethod: "Razorpay",
-          paymentStatus: "Paid",
-          ...paymentMeta
+      if (paymentMethod === "PhonePe") {
+        await finalizeOrder({
+          paymentMethod: "PhonePe",
+          paymentStatus: "Paid"
         });
-
-        setLatestOrder(order);
-        onClearCart();
-        navigate(`/order-success/${order._id}`);
-      };
+        return;
+      }
 
       const razorpayOrder = await paymentService.createOrder(totals.total);
 
       if (razorpayOrder.isMock) {
         await finalizeOrder({
+          paymentMethod: "Razorpay",
           razorpayOrderId: razorpayOrder.id,
           razorpayPaymentId: `mock_payment_${Date.now()}`
         });
@@ -176,6 +246,7 @@ const CartPage = ({ cartItems, onUpdateQuantity, onClearCart, setLatestOrder }) 
             }
 
             await finalizeOrder({
+              paymentMethod: "Razorpay",
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: verification.razorpayPaymentId
             });
@@ -212,7 +283,7 @@ const CartPage = ({ cartItems, onUpdateQuantity, onClearCart, setLatestOrder }) 
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Checkout failed. Add Razorpay keys and backend services first."
+          "Checkout failed. Add payment keys and backend services first."
       );
     } finally {
       if (shouldResetLoading) {
@@ -311,6 +382,67 @@ const CartPage = ({ cartItems, onUpdateQuantity, onClearCart, setLatestOrder }) 
           </div>
         </div>
 
+        <div className="mt-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-orange-200">
+            Payment method
+          </p>
+          <div className="mt-4 grid gap-3">
+            {PAYMENT_METHODS.map((method) => (
+              <button
+                key={method.value}
+                type="button"
+                onClick={() => setPaymentMethod(method.value)}
+                className={`rounded-[24px] border p-4 text-left transition ${
+                  paymentMethod === method.value
+                    ? "border-orange-300 bg-orange-400/15 text-white"
+                    : "border-white/10 bg-white/5 text-slate-200"
+                }`}
+              >
+                <p className="font-semibold">{method.title}</p>
+                <p className="mt-1 text-sm text-slate-300">{method.helper}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {paymentMethod === "PhonePe" && (
+          <motion.div
+            layout
+            className="mt-6 rounded-[30px] border border-white/10 bg-white/5 p-4"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-orange-200">
+              PhonePe Accepted Here
+            </p>
+            <p className="mt-2 text-sm text-slate-200">
+              Scan this QR using the PhonePe app, then confirm payment below.
+            </p>
+
+            <div className="mt-4 rounded-[24px] bg-white p-4">
+              {paymentQrLoading ? (
+                <div className="flex aspect-square items-center justify-center rounded-[20px] bg-slate-100 text-sm font-semibold text-slate-500">
+                  Loading payment QR...
+                </div>
+              ) : (
+                <img
+                  src={resolveAssetUrl(paymentQr?.image || "/uploads/payment-qr.jpeg")}
+                  alt={`PhonePe payment QR${paymentQr?.label ? ` for ${paymentQr.label}` : ""}`}
+                  className="mx-auto max-h-[320px] w-full object-contain"
+                />
+              )}
+            </div>
+
+            <div className="mt-4 space-y-1 text-xs text-slate-300">
+              <p>Merchant: {paymentQr?.label || "ADITYA"}</p>
+              <p>Provider: {paymentQr?.provider || "PhonePe"}</p>
+              {paymentQr?.upiUri && <p className="break-all">UPI: {paymentQr.upiUri}</p>}
+            </div>
+
+            {paymentQrError && (
+              <p className="mt-3 text-xs text-red-300">{paymentQrError}</p>
+            )}
+          </motion.div>
+        )}
+
         <div className="mt-6 rounded-3xl bg-white/10 p-4 text-sm text-slate-200">
           Your pickup token, QR pass, and selected pickup slot will be saved right
           after payment.
@@ -319,7 +451,11 @@ const CartPage = ({ cartItems, onUpdateQuantity, onClearCart, setLatestOrder }) 
         {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
 
         <Button onClick={handleCheckout} className="mt-6 w-full" disabled={loading}>
-          {loading ? "Processing..." : "Pay with Razorpay"}
+          {loading
+            ? "Processing..."
+            : paymentMethod === "PhonePe"
+              ? "I have paid, place order"
+              : "Pay with Razorpay"}
         </Button>
       </AnimationWrapper>
     </div>

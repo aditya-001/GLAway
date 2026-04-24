@@ -1,6 +1,10 @@
 import api, { createAuthConfig } from "./api";
 
 export const paymentService = {
+  getQr: async () => {
+    const { data } = await api.get("/payment/qr", createAuthConfig("user"));
+    return data;
+  },
   createOrder: async (amount) => {
     const { data } = await api.post(
       "/payment/create-order",

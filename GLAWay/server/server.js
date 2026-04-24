@@ -3,12 +3,14 @@ import cors from "cors";
 import express from "express";
 import morgan from "morgan";
 import path from "path";
+import mongoose from "mongoose";
 import { fileURLToPath } from "url";
 import { seedAnimationSettings } from "./controllers/animationSettingsController.js";
-import { connectDB } from "./config/db.js";
+import { connectDB, disconnectDB } from "./config/db.js";
 import { seedDefaultAdmin } from "./controllers/adminController.js";
 import { seedFoodItems } from "./controllers/foodController.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
+import { runtimeConfig } from "./config/runtimeConfig.js";
 import animationSettingsRoutes from "./routes/animationSettingsRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -22,6 +24,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+let server;
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim())
@@ -59,6 +62,25 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/api/health", (_req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+
+  res.status(databaseReady ? 200 : 503).json({
+    success: databaseReady,
+    message: databaseReady
+      ? "GLAWay API is healthy"
+      : "GLAWay API is running but the database is not ready",
+    data: {
+      environment: runtimeConfig.environment,
+      database: {
+        ready: databaseReady,
+        state: mongoose.connection.readyState
+      },
+      uptimeSeconds: Math.round(process.uptime())
+    }
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/food", foodRoutes);
 app.use("/api/order", orderRoutes);
@@ -70,6 +92,40 @@ app.use("/api/animation-settings", animationSettingsRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+const shutdown = async (signal) => {
+  console.log(`Received ${signal}. Closing server...`);
+
+  try {
+    if (server) {
+      await new Promise((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      });
+    }
+
+    await disconnectDB();
+    console.log("Shutdown complete");
+    process.exit(0);
+  } catch (error) {
+    console.error("Error during shutdown", error);
+    process.exit(1);
+  }
+};
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM");
+});
+
 const startServer = async () => {
   try {
     await connectDB();
@@ -77,7 +133,7 @@ const startServer = async () => {
     await seedAnimationSettings();
     await seedFoodItems();
 
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {

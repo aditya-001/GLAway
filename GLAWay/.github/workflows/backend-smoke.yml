@@ -1,0 +1,56 @@
+name: Backend Smoke Test
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      PORT: 5000
+      SMOKE_MONGO_URI: mongodb://127.0.0.1:27017/glaway-ci
+      SMOKE_ALLOW_MEMORY_DB: false
+      MONGO_URI: mongodb://127.0.0.1:27017/glaway-ci
+      ALLOW_MEMORY_DB: false
+      JWT_SECRET: smoke-ci-secret-change-me
+      MOCK_RAZORPAY: true
+      RAZORPAY_KEY_ID: rzp_test_smoke_key
+      RAZORPAY_KEY_SECRET: smoke_secret
+      ADMIN_EMAIL: admin@glaway.com
+      ADMIN_PASSWORD: admin12345
+      CLIENT_URL: http://localhost:5173
+      VITE_API_URL: http://localhost:5000/api
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run backend smoke test
+        working-directory: server
+        run: npm run smoke

@@ -161,6 +161,16 @@ The backend is shaped around the existing frontend in `client/src/services`.
 - `GET /api/animation-settings`
 - `PATCH /api/animation-settings`
 
+## Backend Smoke Test
+
+Run this from the repo root to boot the API on a random port and verify the core routes:
+
+```bash
+npm --prefix server run smoke
+```
+
+The GitHub Actions workflow at [`.github/workflows/backend-smoke.yml`](/home/aditya/Public/GLAWay/.github/workflows/backend-smoke.yml) runs this check on every push.
+
 ## Sample Requests And Responses
 
 ### 1. User Signup
