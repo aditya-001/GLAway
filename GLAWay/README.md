@@ -462,6 +462,29 @@ Run the backend smoke test:
 npm --prefix server run smoke
 ```
 
+## Deploy Backend On Vercel
+
+If you deploy the backend to Vercel, set the project root directory to
+`GLAWay/server`.
+
+Vercel will use the Express app exported from [server/server.js](server/server.js)
+and the deployment config in [server/vercel.json](server/vercel.json)
+to skip the old `react-scripts` build command.
+
+Required environment variables on Vercel:
+
+- `MONGO_URI`
+- `JWT_SECRET`
+- `CLIENT_URL`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `RAZORPAY_KEY_ID`
+- `RAZORPAY_KEY_SECRET`
+- `MOCK_RAZORPAY`
+
+Menu image uploads use a Vercel-safe in-memory fallback and store the uploaded
+image data in MongoDB, so the admin food editor keeps working on Vercel.
+
 ## Connect Frontend To Backend
 
 The frontend already points to the backend API. If you use the root-level

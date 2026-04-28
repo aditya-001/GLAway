@@ -24,7 +24,7 @@ export const resolveAssetUrl = (assetPath) => {
     return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80";
   }
 
-  if (/^https?:\/\//i.test(assetPath)) {
+  if (/^(https?:\/\/|data:|blob:)/i.test(assetPath)) {
     return assetPath;
   }
 

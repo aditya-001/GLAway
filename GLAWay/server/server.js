@@ -24,6 +24,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const isVercel = process.env.VERCEL === "1";
 let server;
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
@@ -50,7 +51,10 @@ app.use(
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/uploads", express.static(path.resolve(__dirname, "uploads")));
+
+if (!isVercel) {
+  app.use("/uploads", express.static(path.resolve(__dirname, "uploads")));
+}
 
 app.get("/", (req, res) => {
   res.json({
@@ -118,28 +122,34 @@ const shutdown = async (signal) => {
   }
 };
 
-process.on("SIGINT", () => {
-  void shutdown("SIGINT");
-});
-
-process.on("SIGTERM", () => {
-  void shutdown("SIGTERM");
-});
-
-const startServer = async () => {
+const initializeApp = async () => {
   try {
     await connectDB();
     await seedDefaultAdmin();
     await seedAnimationSettings();
     await seedFoodItems();
-
-    server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
   } catch (error) {
     console.error("Unable to start GLAWay API", error);
     process.exit(1);
   }
 };
 
-startServer();
+if (!isVercel) {
+  process.on("SIGINT", () => {
+    void shutdown("SIGINT");
+  });
+
+  process.on("SIGTERM", () => {
+    void shutdown("SIGTERM");
+  });
+}
+
+await initializeApp();
+
+if (!isVercel) {
+  server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+export default app;

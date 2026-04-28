@@ -234,7 +234,17 @@ export const seedFoodItems = async () => {
   }
 };
 
-const buildImagePath = (file) => (file ? `/uploads/${file.filename}` : undefined);
+const buildImagePath = (file) => {
+  if (!file) {
+    return undefined;
+  }
+
+  if (process.env.VERCEL === "1" && file.buffer) {
+    return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+  }
+
+  return `/uploads/${file.filename}`;
+};
 const ALLOWED_CATEGORIES = ["Block A", "Block B", "Subway"];
 const ALLOWED_FOOD_TYPES = ["Veg", "Non-Veg"];
 
