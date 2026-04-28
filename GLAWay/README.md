@@ -427,14 +427,23 @@ cd server && npm install
 cd ../client && npm install
 ```
 
-Run the backend:
+Run both apps together from the repo root:
+
+```bash
+npm run dev
+```
+
+This uses the backend `start` script for a stable combined launch. If you want
+backend hot reloads, use `npm run dev:server` separately.
+
+Run just the backend:
 
 ```bash
 cd server
 npm run dev
 ```
 
-Run the frontend:
+Run just the frontend:
 
 ```bash
 cd client
@@ -444,17 +453,22 @@ npm run dev
 Build the frontend:
 
 ```bash
-cd client
-npm run build
+npm --prefix client run build
+```
+
+Run the backend smoke test:
+
+```bash
+npm --prefix server run smoke
 ```
 
 ## Connect Frontend To Backend
 
-The frontend already points to:
+The frontend already points to the backend API. If you use the root-level
+launcher, it also injects the correct `VITE_API_URL` automatically.
 
-```env
-VITE_API_URL=http://localhost:5000/api
-```
+If you run the frontend by itself, make sure the backend is running on port
+`5000` or set `VITE_API_URL` to your backend URL.
 
 That means no frontend code changes are needed. Just make sure:
 
