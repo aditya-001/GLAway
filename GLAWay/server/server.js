@@ -19,8 +19,8 @@ import foodRoutes from "./routes/foodRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const serverFilePath = fileURLToPath(import.meta.url);
+const serverDirPath = path.dirname(serverFilePath);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -56,7 +56,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 if (!isServerless) {
-  app.use("/uploads", express.static(path.resolve(__dirname, "uploads")));
+  app.use("/uploads", express.static(path.resolve(serverDirPath, "uploads")));
 }
 
 app.get("/", (req, res) => {
