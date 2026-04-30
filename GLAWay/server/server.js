@@ -25,6 +25,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isVercel = process.env.VERCEL === "1";
+const isNetlify =
+  process.env.NETLIFY === "true" || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+const isServerless = isVercel || isNetlify;
 let server;
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
@@ -52,7 +55,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-if (!isVercel) {
+if (!isServerless) {
   app.use("/uploads", express.static(path.resolve(__dirname, "uploads")));
 }
 
@@ -130,11 +133,14 @@ const initializeApp = async () => {
     await seedFoodItems();
   } catch (error) {
     console.error("Unable to start GLAWay API", error);
+    if (isServerless) {
+      throw error;
+    }
     process.exit(1);
   }
 };
 
-if (!isVercel) {
+if (!isServerless) {
   process.on("SIGINT", () => {
     void shutdown("SIGINT");
   });
@@ -146,7 +152,7 @@ if (!isVercel) {
 
 await initializeApp();
 
-if (!isVercel) {
+if (!isServerless) {
   server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
