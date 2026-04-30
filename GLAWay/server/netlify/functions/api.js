@@ -1,9 +1,11 @@
 import serverless from "serverless-http";
-import app from "../../server.js";
+import app, { appReady } from "../../server.js";
 
 const expressHandler = serverless(app);
 
 export const handler = async (event, context) => {
+  await appReady;
+
   event.path = event.path.replace(/^\/\.netlify\/functions\/api/, "");
 
   if (event.path === "") {

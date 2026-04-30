@@ -150,11 +150,13 @@ if (!isServerless) {
   });
 }
 
-await initializeApp();
+export const appReady = initializeApp();
 
 if (!isServerless) {
-  server = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  appReady.then(() => {
+    server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   });
 }
 
